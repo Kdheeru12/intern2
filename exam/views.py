@@ -3,7 +3,7 @@ from django.conf import settings
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.models import User,auth
 from django.contrib import messages
-from django.core.mail import send_mail
+from .models import Profile
 import random
 import requests
 from django.db import models
@@ -15,11 +15,123 @@ import cv2
 import face_recognition
 import os
 from datetime import datetime
-def homepage(request):
-    return render(request,'1.html')
+from django.core.mail import send_mail,BadHeaderError
+from .form import ProfileForm
 
+def homepage(request):
+    if request.user.is_authenticated:
+        profile = get_object_or_404(Profile,user=str(request.user))
+        print(profile)
+        context={
+            'profile':profile
+        }
+        return render(request,'index.html',context)
+    else:
+        return redirect('/signup')
+
+def signup(request):
+    if request.method == 'POST':
+        first_name = request.POST['firstname']
+        last_name = request.POST['lastname']
+        email = request.POST['email']
+        password = request.POST['password']
+        schoolname =request.POST['schoolname']
+        city = request.POST['city']
+        globals()['first_name']=first_name
+        globals()['last_name']=last_name
+        globals()['email'] = email
+        globals()['password']= password
+        globals()['schoolname']=schoolname
+        globals()['city']= city
+        if User.objects.filter(email=email).exists():
+            messages.info(request,'Email Already exist')
+            return redirect('signup')
+        else:
+            print('aaa')
+            otp = random.randint(100000,999999)
+            #user = User.objects.create_user(username=phonenumber,password=password,email=email,first_name=first_name,last_name=last_name)
+            #user.save()
+            globals()['otp']=otp
+            subject = 'Regarding Login To The Site'
+            message = 'Hello'+str(first_name)+'Otp For Login Is:'+str(otp)
+            sender = 'hello@shunya.tech'
+            recipients = [email]
+            send_mail(subject,message,sender,recipients)
+            return redirect('verification')
+        return render(request,'register.html')
+    else:
+        return render(request,'register.html')
 # Create your views here.
+def verification(request):
+    if request.method == 'POST':
+        email_otp = int(request.POST['otp'])
+        try:
+            user=User.objects.filter(email=email).exists()
+            print(otp)
+            otp is not None
+        except:
+            return redirect('signup')
+        print(user)
+        if email_otp == otp and user == False:
+            messages.info(request,'otp verified')
+            user = User.objects.create_user(username=email,password=password,email=email,first_name=first_name,last_name=last_name)
+            user_profile = Profile(user=email,firstname=first_name,lastname=last_name,schoolName=schoolname,city=city)
+            user.save()
+            user_profile.save()
+            return redirect('login')
+        elif user == True:
+            messages.info(request,'user already verified')
+            return redirect('login')
+        else:
+            messages.info(request,'otp invalid')
+            return redirect('verification')
+    else:
+        return render(request,'verification.html')
+def login(request):
+    if request.method == 'POST':
+        password = request.POST['password']
+        email = request.POST['email']
+        user = auth.authenticate(username=email,password=password)
+        if user is not None:
+            auth.login(request,user)
+            return redirect("/")
+        else:
+            messages.info(request,'invalid phone or password')
+            return redirect('/login')
+    else:
+        if request.user.is_authenticated:
+            return redirect('/')
+        else:
+            return render(request,'login.html')
+def profile(request):
+    if request.user.is_authenticated:
+        profile = get_object_or_404(Profile,user=str(request.user))
+        print(profile)
+        instance = get_object_or_404(Profile,user=str(request.user))
+        form = ProfileForm(request.POST or None,instance=instance)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.save()
+            return redirect('/profile')
+        context={
+            'profile':profile,
+            'form':form
+        }
+        return render(request,'profile.html',context)
+    else:
+        return redirect('login')
+def logout(request):
+    auth.logout(request)
+    return redirect('homepage')
+def edit(request):
+    instance = User.objects.filter(username='kdheerureddy@gmail.com')
 def videorecording(request):
+    subject = 'hello'
+    message = 'This is a Test Mail1'
+    sender = 'hello@shunya.tech'
+    recipients = ['dheerukreddy@gmail.com']
+    send_mail(subject,message,sender,recipients)
+    print('maiil not sent')
     if request.method == 'POST':
         from datetime import datetime
         now = datetime.now()
