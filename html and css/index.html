@@ -118,6 +118,25 @@
                 <div class="page-title"> 
                     <h3 class="title">Welcome {{profile.firstname}} {{profile.lastname}}</h3> 
                 </div>
+                <div class="row">
+                    {% if profile.school_address == '' or none %}
+					<div class="alert alert-info">
+                        <strong>Step 1:</strong>Update information about your school. <a href="settings" class="alert-link">Click here </a>.
+                    </div>
+                   {% endif %}
+					<div class="alert alert-info">
+                        <strong>Step 2:</strong>Add Class Names and Sections <a href="classes.html" class="alert-link">Click here</a>.
+                    </div>
+					<div class="alert alert-info">
+                        <strong>Step 3:</strong>Add Teachers and assign them to Classes. <a href="teachers.html" class="alert-link">Click here</a>.
+                    </div>
+					<div class="alert alert-info">
+                        <strong>Step 4:</strong>Add Students. <a href="students.html" class="alert-link">Click here</a>.
+                    </div>
+					<div class="alert alert-info">
+                        <strong>Step 5:</strong>Create a New Test. <a href="tests.html" class="alert-link">Click here</a>.
+                    </div>					
+				</div>
 
 
 

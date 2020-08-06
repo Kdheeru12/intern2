@@ -4,6 +4,9 @@ from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.models import User,auth
 from django.contrib import messages
 from .models import Profile
+from .models import Teacher
+from .models import Class
+from .models import Students
 import random
 import requests
 from django.db import models
@@ -17,7 +20,7 @@ import os
 from datetime import datetime
 from django.core.mail import send_mail,BadHeaderError
 from .form import ProfileForm
-
+from .form import SchoolForm
 def homepage(request):
     if request.user.is_authenticated:
         profile = get_object_or_404(Profile,user=str(request.user))
@@ -75,7 +78,7 @@ def verification(request):
         if email_otp == otp and user == False:
             messages.info(request,'otp verified')
             user = User.objects.create_user(username=email,password=password,email=email,first_name=first_name,last_name=last_name)
-            user_profile = Profile(user=email,firstname=first_name,lastname=last_name,schoolName=schoolname,city=city)
+            user_profile = Profile(user=email,firstname=first_name,lastname=last_name,school_name=schoolname,school_city=city)
             user.save()
             user_profile.save()
             return redirect('login')
@@ -123,15 +126,118 @@ def profile(request):
 def logout(request):
     auth.logout(request)
     return redirect('homepage')
+def settings(request):
+    if request.user.is_authenticated:
+        instance = get_object_or_404(Profile,user=str(request.user))
+        context={
+                'instance':instance,
+            }
+        return render(request,'settings.html',context)
+    else:
+        return redirect('/')
+def settingsedit(request):
+    if request.user.is_authenticated:
+        instance = get_object_or_404(Profile,user=str(request.user))
+        form = SchoolForm(request.POST or None,request.FILES or None,instance=instance)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.save()
+            return redirect('/settings')
+        context={
+            'form':form
+        }
+        return render(request,'settings-edit.html',context)
+    else:
+        return render(request,'settings.html')
+def teachers(request):
+    if request.method == 'POST':
+        name = request.POST['name']
+        clas = request.POST['class']
+        mobile = request.POST['mobile']
+        email = request.POST['email']
+        teacher = Teacher.objects.filter(teacher_name=name,teacher_class=clas,teacher_mobile=mobile,teacher_email=email)
+        teacher.delete()
+        return redirect('/teachers')
+    else:
+        teacher = Teacher.objects.all()
+        print(teacher)
+        return render(request,'teachers.html',{'teacher':teacher})
+def teachersadd(request):
+    if request.method == 'POST': 
+        name = request.POST['name']
+        clas = request.POST['class']
+        mobile = request.POST['mobile']
+        email = request.POST['email']
+        landline = request.POST['landline']
+        aboutme = request.POST['aboutme']
+        teacher = Teacher(teacher_name=name,teacher_class=clas,teacher_mobile=mobile,teacher_email=email,teacher_landline=landline,teacher_about_me=aboutme)
+        teacher.save()
+        return redirect('/teachers')
+    else:
+        clas = Class.objects.all()
+        return render(request,'teachers-add.html',{'clas':clas})
+def Classes(request):
+    if request.method == 'POST':
+        name = request.POST['name']
+        clas = request.POST['class']
+        section = request.POST['section']
+        print(clas,section,name)
+        Clas = Class.objects.filter(Class_name=clas,Class_section=section)
+        print(clas)
+        Clas.delete()
+        return redirect('/classes')
+    else:
+        clas = Class.objects.all()
+        return render(request,'classes.html',{'clas':clas})
+def Classesadd(request):
+    if request.method == 'POST':
+        name = request.POST['name']
+        section = request.POST['section']
+        clas = Class(Class_name=name,Class_section=section)
+        clas.save()
+        studentcount = Students.objects.filter(student_section=section,student_class=clas).count()
+        instance = get_object_or_404(Class,Class_name=clas,Class_section=section)
+        instance.Class_size = int(studentcount)
+        instance.save()
+        return redirect('/classes')
+    else:
+        teacher = Teacher.objects.all()
+        return render(request,'classes-add.html',{'teacher':teacher})
+def students(request):
+    if request.method == 'POST':
+        name = request.POST['name']
+        clas = request.POST['class']
+        section = request.POST['section']
+        students = Students.objects.filter(student_class=clas,student_name=name,student_section=section)
+        students.delete()
+        studentcount = Students.objects.filter(student_section=section,student_class=clas).count()
+        instance = get_object_or_404(Class,Class_name=clas,Class_section=section)
+        instance.Class_size = int(studentcount)
+        instance.save()
+        return redirect('/students')
+    else:
+        students = Students.objects.all() 
+        return render(request,'students.html',{'students':students})
+def studentsadd(request):
+    if request.method == 'POST':
+        name = request.POST['name']
+        clas = request.POST['class']
+        mobile = request.POST['number']
+        email = request.POST['email']
+        section = request.POST['section']
+        students = Students(student_name=name,student_section=section,student_class=clas,student_mobile=mobile)
+        students.save()
+        studentcount = Students.objects.filter(student_section=section,student_class=clas).count()
+        instance = get_object_or_404(Class,Class_name=clas,Class_section=section)
+        instance.Class_size = int(studentcount)
+        instance.save()
+        return redirect('/students')
+    clas = Class.objects.all()
+    return render(request,'students-add.html',{'clas':clas})
 def edit(request):
     instance = User.objects.filter(username='kdheerureddy@gmail.com')
 def videorecording(request):
-    subject = 'hello'
-    message = 'This is a Test Mail1'
-    sender = 'hello@shunya.tech'
-    recipients = ['dheerukreddy@gmail.com']
-    send_mail(subject,message,sender,recipients)
-    print('maiil not sent')
+    
     if request.method == 'POST':
         from datetime import datetime
         now = datetime.now()

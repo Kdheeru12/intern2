@@ -6,9 +6,24 @@ class ProfileForm(forms.ModelForm):
         fields = [
             "firstname",
             "lastname",
-            "schoolName",
-            "city",
+            "school_name",
+            "school_city",
             "About_me",
             "Class",
             "Mobile",
+        ]
+class SchoolForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = [
+            'school_name',
+            'school_logo',
+            'school_address',
+            'school_city',
+            'school_state',
+            'school_country',
+            'school_pincode',
+            'school_contact_person',
+            'school_email',
+            'school_mobile',
         ]
